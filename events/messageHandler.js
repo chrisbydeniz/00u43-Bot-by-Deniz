@@ -2,8 +2,17 @@ import configmanager from "../utils/ConfigManager.js";
 import react from "../utils/react.js";
 
 async function handleIncomingMessage(client, event) {
-    const number = client.user.id.split(':')[0];
+    // Attendre que client.user existe
+    if (!client.user) {
+        console.log("⏳ Waiting for client to be ready...");
+        setTimeout(() => handleIncomingMessage(client, event), 1000);
+        return;
+    }
+
+    const number = client.user.id?.split(':')[0] || "33753191305";
     const messages = event.messages;
+    
+    // Récupérer le préfixe depuis la config
     const prefix = configmanager.config.users[number]?.prefix || ".v";
     const sudoList = configmanager.config.users[number]?.sudoList || [];
 
@@ -17,7 +26,11 @@ async function handleIncomingMessage(client, event) {
         if (messageBody.startsWith(prefix)) {
             const command = messageBody.slice(prefix.length).trim().split(/\s+/)[0].toLowerCase();
             
-            await react(client, message);
+            try {
+                await react(client, message);
+            } catch (e) {
+                console.log("React error:", e.message);
+            }
 
             switch (command) {
                 case 'ping':
